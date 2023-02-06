@@ -15,6 +15,9 @@
 #define LUDS_SCK_FILE "/tmp/libpcscd.socket"
 #define LMAX(_val1, _val2) (_val1) > (_val2) ? _val1 : _val2
 
+static int g_version_major = 0;;
+static int g_version_minor = 0;
+
 struct call_test_info
 {
     struct pcscd_context* context;
@@ -75,7 +78,7 @@ my_send_to_app(struct pcscd_context* context, const void* data, int bytes)
     struct call_test_info* cti;
     int error;
     const char* data8;
-    
+
     //printf("my_send_to_app: bytes %d\n", bytes);
     cti = (struct call_test_info*)(context->user[0]);
     data8 = (const char*)data;
@@ -246,6 +249,8 @@ my_cmd_version(struct pcscd_context* context, int major, int minor, int result)
 {
     printf("my_cmd_version: major %d minor %d result %d\n",
            major, minor, result);
+    g_version_major = major;
+    g_version_minor = minor;
     return pcscd_cmd_version_reply(context, major, minor, result);
 }
 
@@ -266,7 +271,11 @@ my_cmd_wait_reader_state_change(struct pcscd_context* context)
 {
     //printf("my_cmd_wait_reader_state_change:\n");
     /* should only call my_cmd_get_readers_state if version is 4.4+ */
-    return my_cmd_get_readers_state(context);
+    if (g_version_major > 4 || (g_version_major > 3 && g_version_minor > 3))
+    {
+        return my_cmd_get_readers_state(context);
+    }
+    return LIBPCSCD_ERROR_NONE;;
 }
 
 /*****************************************************************************/

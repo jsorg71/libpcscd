@@ -327,7 +327,7 @@ get_attrib(struct pcscd_context_priv* self, struct stream* s)
     in_uint32_le(s, attrlen);
     in_uint32_le(s, result);
     return self->context.get_attrib(&(self->context), card, attrid,
-                                    attr, attrlen, result);   
+                                    attr, attrlen, result);
 }
 
 /*****************************************************************************/
@@ -351,7 +351,7 @@ set_attrib(struct pcscd_context_priv* self, struct stream* s)
     in_uint32_le(s, attrlen);
     in_uint32_le(s, result);
     return self->context.set_attrib(&(self->context), card, attrid,
-                                    attr, attrlen, result);   
+                                    attr, attrlen, result);
 }
 
 /*****************************************************************************/
@@ -386,6 +386,10 @@ static int
 cmd_wait_reader_state_change(struct pcscd_context_priv* self, struct stream* s)
 {
     //printf("cmd_wait_reader_state_change:\n");
+    if (s_check_rem(s, 8))
+    {
+        in_uint8s(s, 8); /* v4.3- timeout, result */
+    }
     return self->context.cmd_wait_reader_state_change(&(self->context));
 }
 
@@ -395,6 +399,10 @@ cmd_stop_waiting_reader_state_change(struct pcscd_context_priv* self,
                                      struct stream* s)
 {
     //printf("cmd_stop_waiting_reader_state_change:\n");
+    if (s_check_rem(s, 8))
+    {
+        in_uint8s(s, 8); /* v4.3- timeout, result */
+    }
     return self->context.cmd_stop_waiting_reader_state_change(&(self->context));
 }
 
@@ -544,7 +552,8 @@ pcscd_process_data_in(struct pcscd_context* context,
         missedbytes = (int)(s->end - s->p);
         if (missedbytes != 0)
         {
-            printf("pcscd_process_data_in: missed bytes %d\n", missedbytes);
+            printf("pcscd_process_data_in: missed bytes %d size %d extrabytes %d code %d\n",
+                   missedbytes, size, extrabytes, code);
         }
         /* restore p to next message and end to old end */
         s->p = holdp + size;
