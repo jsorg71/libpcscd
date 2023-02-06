@@ -4,7 +4,7 @@ PCSCLITE_LIBS=$(shell pkg-config --libs libpcsclite)
 
 OBJS=call_test.o
 
-CFLAGS=-g -O2 -Wall -I../include $(PCSCLITE_CFLAGS)
+CFLAGS=-fPIC -g -O2 -Wall -I../include $(PCSCLITE_CFLAGS)
 
 LDFLAGS=$(PCSCLITE_LIBS) -lpthread
 

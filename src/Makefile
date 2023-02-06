@@ -1,7 +1,7 @@
 
 OBJS=libpcscd.o
 
-CFLAGS=-g -O2 -Wall -I../include
+CFLAGS=-fPIC -g -O2 -Wall -I../include
 
 LDFLAGS=
 
