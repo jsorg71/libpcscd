@@ -30,7 +30,7 @@ struct pcscd_settings
 struct pcscd_context
 {
     int (*send_to_app)(struct pcscd_context* context,
-                       void* data, int bytes);
+                       const void* data, int bytes);
     int (*establish_context)(struct pcscd_context* context,
                              int dwscope, int hcontext, int result);
     int (*release_context)(struct pcscd_context* context,
@@ -48,6 +48,20 @@ struct pcscd_context
                              int card, int result);
     int (*end_transaction)(struct pcscd_context* context,
                            int card, int disposition, int result);
+    int (*transmit)(struct pcscd_context* context, int card,
+                    int send_ior_protocol, int send_ior_pcilength,
+                    int send_bytes,
+                    int recv_ior_protocol, int recv_ior_pcilength,
+                    int recv_bytes, int result, const char* senddata);
+    int (*control)(struct pcscd_context* context, int card, int controlcode,
+                   int sendbytes, int recvbytes, int bytesreturned,
+                   int result, const char* senddata);
+    int (*status)(struct pcscd_context* context, int card, int result);
+    int (*cancel)(struct pcscd_context* context, int hcontext, int result);
+    int (*get_attrib)(struct pcscd_context* context, int card, int attrid,
+                      const char* attr, int attrlen, int result);
+    int (*set_attrib)(struct pcscd_context* context, int card, int attrid,
+                      const char* attr, int attrlen, int result);
     int (*cmd_version)(struct pcscd_context* context,
                        int major, int minor, int result);
     int (*cmd_get_readers_state)(struct pcscd_context* context);
@@ -88,12 +102,34 @@ pcscd_begin_transaction_reply(struct pcscd_context* context, int card,
 int
 pcscd_end_transaction_reply(struct pcscd_context* context, int card,
                             int disposition, int result);
+
+int
+pcscd_transmit_reply(struct pcscd_context* context, int card,
+                     int sendiorprotocol, int sendiorpcilength,
+                     int sendbytes,
+                     int recviorprotocol, int recviorpcilength,
+                     int recvbytes, int result, const char* recvdata);
+int
+pcscd_control_reply(struct pcscd_context* context, int card, int controlcode,
+                    int sendbytes, int recvbytes, int bytesreturned,
+                    int result, const char* recvdata);
+int
+pcscd_status_reply(struct pcscd_context* context, int card, int result);
+int
+pcscd_cancel_reply(struct pcscd_context* context, int hcontext, int result);
+int
+pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
+                       const char* attr, int attrlen, int result);
+int
+pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
+                       const char* attr, int attrlen, int result);
 int
 pcscd_cmd_version_reply(struct pcscd_context* context,
                         int major, int minor, int result);
 int
 pcscd_cmd_get_readers_state_reply(struct pcscd_context* context,
-                                  struct pcsc_reader_state* states);
+                                  struct pcsc_reader_state* states,
+                                  int num_states);
 int
 pcscd_wait_reader_state_change_reply(struct pcscd_context* context,
                                      int timeout, int result);

@@ -70,15 +70,15 @@ hexdump(const void* p, int len)
 
 /*****************************************************************************/
 static int
-my_send_to_app(struct pcscd_context* context, void* data, int bytes)
+my_send_to_app(struct pcscd_context* context, const void* data, int bytes)
 {
     struct call_test_info* cti;
     int error;
-    char* data8;
+    const char* data8;
     
     //printf("my_send_to_app: bytes %d\n", bytes);
     cti = (struct call_test_info*)(context->user[0]);
-    data8 = (char*)data;
+    data8 = (const char*)data;
     while (bytes > 0)
     {
         error = send(cti->sck, data8, bytes, 0);
@@ -158,16 +158,94 @@ static int
 my_end_transaction(struct pcscd_context* context,
                    int card, int disposition, int result)
 {
-    printf("my_end_transaction: card %d result %d\n", card, result);
+    //printf("my_end_transaction: card %d result %d\n", card, result);
     return pcscd_end_transaction_reply(context, card, disposition, result);
 }
-    
+
+/*****************************************************************************/
+static int
+my_transmit(struct pcscd_context* context, int card,
+            int sendiorprotocol, int sendiorpcilength,
+            int sendbytes,
+            int recviorprotocol, int recviorpcilength,
+            int recvbytes, int result, const char* senddata)
+{
+    char* recvdata;
+    int rv;
+
+    //printf("my_transmit: card %d result %d send_bytes %d recv_bytes %d\n",
+    //       card, result, sendbytes, recvbytes);
+    recvdata = (char*)calloc(1, recvbytes);
+    rv = pcscd_transmit_reply(context, card,
+                              sendiorprotocol, sendiorpcilength,
+                              sendbytes,
+                              recviorprotocol, recviorpcilength,
+                              recvbytes, result, recvdata);
+    free(recvdata);
+    return rv;
+}
+
+/*****************************************************************************/
+static int
+my_control(struct pcscd_context* context, int card, int controlcode,
+           int sendbytes, int recvbytes, int bytesreturned,
+           int result, const char* senddata)
+{
+    char* recvdata;
+    int rv;
+
+    //printf("my_control: card %d result %d\n", card, result);
+    recvdata = (char*)calloc(1, recvbytes);
+    bytesreturned = recvbytes;
+    rv = pcscd_control_reply(context, card, controlcode,
+                             sendbytes, recvbytes, bytesreturned,
+                             result, recvdata);
+    free(recvdata);
+    return rv;
+}
+
+/*****************************************************************************/
+static int
+my_status(struct pcscd_context* context, int card, int result)
+{
+    //printf("my_status: card %d result %d\n", card, result);
+    return pcscd_status_reply(context, card, result);
+}
+
+/*****************************************************************************/
+static int
+my_cancel(struct pcscd_context* context, int hcontext, int result)
+{
+    //printf("my_cancel: hcontext %d result %d\n", hcontext, result);
+    return pcscd_cancel_reply(context, hcontext, result);
+}
+
+/*****************************************************************************/
+static int
+my_get_attrib(struct pcscd_context* context, int card, int attrid,
+              const char* attr, int attrlen, int result)
+{
+    //printf("my_get_attrib: card %d result %d attrlen %d\n",
+    //       card, result, attrlen);
+    return pcscd_get_attrib_reply(context, card, attrid, attr, attrlen, 0);
+}
+
+/*****************************************************************************/
+static int
+my_set_attrib(struct pcscd_context* context, int card, int attrid,
+              const char* attr, int attrlen, int result)
+{
+    //printf("my_set_attrib: card %d result %d attrlen %d\n",
+    //       card, result, attrlen);
+    return pcscd_set_attrib_reply(context, card, attrid, attr, attrlen, 0);
+}
+
 /*****************************************************************************/
 static int
 my_cmd_version(struct pcscd_context* context, int major, int minor, int result)
 {
-    //printf("my_cmd_version: major %d minor %d result %d\n",
-    //       major, minor, result);
+    printf("my_cmd_version: major %d minor %d result %d\n",
+           major, minor, result);
     return pcscd_cmd_version_reply(context, major, minor, result);
 }
 
@@ -179,7 +257,7 @@ my_cmd_get_readers_state(struct pcscd_context* context)
 
     //printf("my_cmd_get_readers_state:\n");
     memset(states, 0, sizeof(states));
-    return pcscd_cmd_get_readers_state_reply(context, states);
+    return pcscd_cmd_get_readers_state_reply(context, states, 16);
 }
 
 /*****************************************************************************/
@@ -187,6 +265,7 @@ static int
 my_cmd_wait_reader_state_change(struct pcscd_context* context)
 {
     //printf("my_cmd_wait_reader_state_change:\n");
+    /* should only call my_cmd_get_readers_state if version is 4.4+ */
     return my_cmd_get_readers_state(context);
 }
 
@@ -194,7 +273,7 @@ my_cmd_wait_reader_state_change(struct pcscd_context* context)
 static int
 my_cmd_stop_waiting_reader_state_change(struct pcscd_context* context)
 {
-    printf("my_cmd_stop_waiting_reader_state_change:\n");
+    //printf("my_cmd_stop_waiting_reader_state_change:\n");
     return pcscd_wait_reader_state_change_reply(context, 0, 0);
     //return LIBPCSCD_ERROR_NONE;
     //return my_cmd_get_readers_state(context);
@@ -263,7 +342,7 @@ main_thread_loop(struct call_test_info* cti)
             {
                 //printf("main_thread_loop: sck set\n");
                 num_bytes = recv(cti->sck, bytes, sizeof(bytes), 0);
-                printf("main_thread_loop: num_bytes %d\n", num_bytes);
+                //printf("main_thread_loop: num_bytes %d\n", num_bytes);
                 if (num_bytes > 0)
                 {
                     //hexdump(bytes, num_bytes);
@@ -291,33 +370,78 @@ pcsc_thread_loop(void* in)
     SCARD_READERSTATE cards[4];
     SCARDHANDLE card;
     DWORD proto;
+    DWORD state;
+    char readername[128];
+    DWORD readername_len;
+    BYTE attr[264];
+    DWORD attr_len;
+    SCARD_IO_REQUEST ior;
+    SCARD_IO_REQUEST ior1;
 
     sck = (int)(intptr_t)in;
     printf("pcsc_thread_loop: sck %d pid %d\n", sck, getpid());
+
     rv = SCardEstablishContext(SCARD_SCOPE_USER, NULL, NULL, &context);
-    //rv = SCardEstablishContext(999, NULL, NULL, &context);
     printf("pcsc_thread_loop: SCardEstablishContext rv 0x%8.8x context %d\n",
            (int)rv, (int)context);
+
     rv = SCardIsValidContext(context);
     printf("pcsc_thread_loop: SCardIsValidContext rv 0x%8.8x\n", (int)rv);
+
     rv = SCardListReaders(context, NULL, NULL, &bytes);
     printf("pcsc_thread_loop: SCardListReaders rv 0x%8.8x\n", (int)rv);
     memset(cards, 0, sizeof(cards));
+
     cards[0].szReader = "\\\\?PnP?\\Notification";
-    rv = SCardGetStatusChange(context, 5000, cards, 1);
+    rv = SCardGetStatusChange(context, 1000, cards, 1);
     printf("pcsc_thread_loop: SCardGetStatusChange rv 0x%8.8x\n", (int)rv);
+
     rv = SCardConnect(context, "jay", 0, 0, &card, &proto);
-    printf("pcsc_thread_loop: SCardConnect rv 0x%8.8x\n", (int)rv);
-    rv = SCardReconnect(context, 1, 0, 0, &proto);
+    printf("pcsc_thread_loop: SCardConnect rv 0x%8.8x card %d proto %d\n", (int)rv, (int)card, (int)proto);
+
+    rv = SCardReconnect(context, card, 0, 0, &proto);
     printf("pcsc_thread_loop: SCardReconnect rv 0x%8.8x\n", (int)rv);
-    rv = SCardBeginTransaction(1);
+
+    rv = SCardBeginTransaction(card);
     printf("pcsc_thread_loop: SCardBeginTransaction rv 0x%8.8x\n", (int)rv);
-    rv = SCardEndTransaction(1, 0);
+
+    ior.dwProtocol = 0;
+    ior.cbPciLength = 0;
+    attr_len = 128;
+    rv = SCardTransmit(1, &ior, attr, attr_len, &ior1, attr, &attr_len);
+    printf("pcsc_thread_loop: SCardTransmit rv 0x%8.8x\n", (int)rv);
+
+    rv = SCardEndTransaction(card, 0);
     printf("pcsc_thread_loop: SCardEndTransaction rv 0x%8.8x\n", (int)rv);
-    rv = SCardDisconnect(context, 1);
+
+    readername_len = 128;
+    attr_len = 128;
+    rv = SCardStatus(card, readername, &readername_len, &state, &proto, attr, &attr_len);
+    printf("pcsc_thread_loop: SCardStatus rv 0x%8.8x\n", (int)rv);
+
+    attr_len = 128;
+    rv = SCardControl(card, 0, attr, attr_len, attr, attr_len, &attr_len);
+    printf("pcsc_thread_loop: SCardControl rv 0x%8.8x\n", (int)rv);
+
+    memset(attr, 0xff, 128);
+    attr_len = 264;
+    rv = SCardSetAttrib(card, 0, attr, attr_len);
+    printf("pcsc_thread_loop: SCardSetAttrib rv 0x%8.8x\n", (int)rv);
+
+    memset(attr, 0xff, 128);
+    attr_len = 264;
+    rv = SCardGetAttrib(card, 0xe, attr, &attr_len);
+    printf("pcsc_thread_loop: SCardGetAttrib rv 0x%8.8x\n", (int)rv);
+
+    rv = SCardDisconnect(context, card);
     printf("pcsc_thread_loop: SCardDisconnect rv 0x%8.8x\n", (int)rv);
+
+    rv = SCardCancel(context);
+    printf("pcsc_thread_loop: SCardCancel rv 0x%8.8x\n", (int)rv);
+
     rv = SCardReleaseContext(context);
     printf("pcsc_thread_loop: SCardReleaseContext rv 0x%8.8x\n", (int)rv);
+
     close(sck);
     return 0;
 }
@@ -408,6 +532,12 @@ main(int argc, char** argv)
         context->disconnect = my_disconnect;
         context->begin_transaction = my_begin_transaction;
         context->end_transaction = my_end_transaction;
+        context->transmit = my_transmit;
+        context->control = my_control;
+        context->status = my_status;
+        context->cancel = my_cancel;
+        context->get_attrib = my_get_attrib;
+        context->set_attrib = my_set_attrib;
         context->cmd_version = my_cmd_version;
         context->cmd_get_readers_state = my_cmd_get_readers_state;
         context->cmd_wait_reader_state_change = my_cmd_wait_reader_state_change;
