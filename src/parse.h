@@ -254,11 +254,11 @@ struct stream
 #define out_uint32_be(s, v) do \
 { \
     *((s)->p) = (unsigned char)((v) >> 24); \
-    s->p++; \
+    (s)->p++; \
     *((s)->p) = (unsigned char)((v) >> 16); \
-    s->p++; \
+    (s)->p++; \
     *((s)->p) = (unsigned char)((v) >> 8); \
-    s->p++; \
+    (s)->p++; \
     *((s)->p) = (unsigned char)(v); \
     (s)->p++; \
 } while (0)
