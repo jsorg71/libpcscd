@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) Jay Sorg 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,8 +54,7 @@ pcscd_delete_context(struct pcscd_context* context)
 static int
 default_func(struct pcscd_context_priv* self, struct stream* s)
 {
-    printf("default_func:\n");
-    return LIBPCSCD_ERROR_PARSE;
+    return LIBPCSCD_ERROR_IMPL;
 }
 
 /*****************************************************************************/
@@ -51,7 +65,6 @@ establish_context(struct pcscd_context_priv* self, struct stream* s)
     int hcontext;
     int result;
 
-    //printf("establish_context:\n");
     if (!s_check_rem(s, 12))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -70,7 +83,6 @@ release_context(struct pcscd_context_priv* self, struct stream* s)
     int hcontext;
     int result;
 
-    //printf("release_context:\n");
     if (!s_check_rem(s, 8))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -92,7 +104,6 @@ connect(struct pcscd_context_priv* self, struct stream* s)
     int activeprotocol;
     int result;
 
-    //printf("connect:\n");
     if (!s_check_rem(s, 152))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -120,7 +131,6 @@ reconnect(struct pcscd_context_priv* self, struct stream* s)
     int activeprotocol;
     int result;
 
-    //printf("reconnect:\n");
     if (!s_check_rem(s, 24))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -144,7 +154,6 @@ disconnect(struct pcscd_context_priv* self, struct stream* s)
     int disposition;
     int result;
 
-    //printf("disconnect:\n");
     if (!s_check_rem(s, 12))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -163,7 +172,6 @@ begin_transaction(struct pcscd_context_priv* self, struct stream* s)
     int card;
     int result;
 
-    //printf("begin_transaction:\n");
     if (!s_check_rem(s, 8))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -181,7 +189,6 @@ end_transaction(struct pcscd_context_priv* self, struct stream* s)
     int disposition;
     int result;
 
-    //printf("end_transaction:\n");
     if (!s_check_rem(s, 12))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -207,7 +214,6 @@ transmit(struct pcscd_context_priv* self, struct stream* s)
     int result;
     char* senddata;
 
-    //printf("transmit:\n");
     if (!s_check_rem(s, 32))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -248,7 +254,6 @@ control(struct pcscd_context_priv* self, struct stream* s)
     int result;
     char* senddata;
 
-    //printf("control:\n");
     if (!s_check_rem(s, 24))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -280,7 +285,6 @@ status(struct pcscd_context_priv* self, struct stream* s)
     int card;
     int result;
 
-    //printf("status:\n");
     if (!s_check_rem(s, 8))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -297,7 +301,6 @@ cancel(struct pcscd_context_priv* self, struct stream* s)
     int hcontext;
     int result;
 
-    //printf("cancel:\n");
     if (!s_check_rem(s, 8))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -316,7 +319,6 @@ get_attrib(struct pcscd_context_priv* self, struct stream* s)
     int attrlen;
     int result;
 
-    //printf("get_attrib:\n");
     if (!s_check_rem(s, 280))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -340,7 +342,6 @@ set_attrib(struct pcscd_context_priv* self, struct stream* s)
     int attrlen;
     int result;
 
-    //printf("set_attrib:\n");
     if (!s_check_rem(s, 280))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -362,7 +363,6 @@ cmd_version(struct pcscd_context_priv* self, struct stream* s)
     int minor;
     int result;
 
-    //printf("cmd_version:\n");
     if (!s_check_rem(s, 12))
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -377,7 +377,6 @@ cmd_version(struct pcscd_context_priv* self, struct stream* s)
 static int
 cmd_get_readers_state(struct pcscd_context_priv* self, struct stream* s)
 {
-    //printf("cmd_get_readers_state:\n");
     return self->context.cmd_get_readers_state(&(self->context));
 }
 
@@ -385,12 +384,21 @@ cmd_get_readers_state(struct pcscd_context_priv* self, struct stream* s)
 static int
 cmd_wait_reader_state_change(struct pcscd_context_priv* self, struct stream* s)
 {
-    //printf("cmd_wait_reader_state_change:\n");
+    int timeout;
+    int result;
+
     if (s_check_rem(s, 8))
     {
-        in_uint8s(s, 8); /* v4.3- timeout, result */
+        in_uint32_le(s, timeout);
+        in_uint32_le(s, result);
     }
-    return self->context.cmd_wait_reader_state_change(&(self->context));
+    else
+    {
+        timeout = 0;
+        result = 0;
+    }
+    return self->context.cmd_wait_reader_state_change
+            (&(self->context), timeout, result);
 }
 
 /*****************************************************************************/
@@ -398,12 +406,21 @@ static int
 cmd_stop_waiting_reader_state_change(struct pcscd_context_priv* self,
                                      struct stream* s)
 {
-    //printf("cmd_stop_waiting_reader_state_change:\n");
+    int timeout;
+    int result;
+
     if (s_check_rem(s, 8))
     {
-        in_uint8s(s, 8); /* v4.3- timeout, result */
+        in_uint32_le(s, timeout);
+        in_uint32_le(s, result);
     }
-    return self->context.cmd_stop_waiting_reader_state_change(&(self->context));
+    else
+    {
+        timeout = 0;
+        result = 0;
+    }
+    return self->context.cmd_stop_waiting_reader_state_change
+            (&(self->context), timeout, result);
 }
 
 typedef int (*message_proc)(struct pcscd_context_priv* self,
@@ -455,7 +472,6 @@ pcscd_process_data_in(struct pcscd_context* context,
     int extrabytes;
     int missedbytes;
 
-    //printf("pcscd_process_data_in:\n");
     if (data_bytes < 0)
     {
         return LIBPCSCD_ERROR_PARSE;
@@ -490,14 +506,12 @@ pcscd_process_data_in(struct pcscd_context* context,
     {
         if (!s_check_rem(s, 8))
         {
-            //printf("pcscd_process_data_in: no more data header\n");
             return LIBPCSCD_ERROR_NONE;
         }
         in_uint32_le(s, size);
         in_uint32_le(s, code);
         if (!s_check_rem(s, size))
         {
-            //printf("pcscd_process_data_in: no more data body\n");
             return LIBPCSCD_ERROR_NONE;
         }
         extrabytes = 0;
@@ -523,13 +537,11 @@ pcscd_process_data_in(struct pcscd_context* context,
             in_uint32_le(s, extrabytes);
             s->p = holdp;
         }
-        //printf("pcscd_process_data_in: size %d extrabytes %d code %d\n",
-        //       size, extrabytes, code);
         if (!s_check_rem(s, size + extrabytes))
         {
-            //printf("pcscd_process_data_in: no more data body\n");
             return LIBPCSCD_ERROR_NONE;
         }
+        /* at this point we can not return til bottom of loop */
         size += extrabytes;
         /* save p and end */
         holdp = s->p;
@@ -539,31 +551,30 @@ pcscd_process_data_in(struct pcscd_context* context,
         /* process message */
         if ((code < 0) || (code > LNUM_FUNCS))
         {
-            printf("pcscd_process_data_in: error bad code\n");
-            return LIBPCSCD_ERROR_PARSE;
+            error = LIBPCSCD_ERROR_CODE;
         }
-        error = g_funcs[code](self, s);
-        if (error != LIBPCSCD_ERROR_NONE)
+        else
         {
-            printf("pcscd_process_data_in: error %d code %d\n", error, code);
-            //return error;
+            error = g_funcs[code](self, s);
         }
         /* check that all the data was processed */
         missedbytes = (int)(s->end - s->p);
-        if (missedbytes != 0)
+        if ((error == LIBPCSCD_ERROR_NONE) && (missedbytes != 0))
         {
-            printf("pcscd_process_data_in: missed bytes %d size %d extrabytes %d code %d\n",
-                   missedbytes, size, extrabytes, code);
+            error = LIBPCSCD_ERROR_MISSED;
         }
         /* restore p to next message and end to old end */
         s->p = holdp + size;
         s->end = holdend;
         /* what is left, move up, can be zero */
         left = (int)(s->end - s->p);
-        //printf("pcscd_process_data_in: left %d size %d\n", left, size);
         memmove(s->data, s->data + 8 + size, left);
         s->end -= 8 + size;
         s->p = s->data;
+        if (error != LIBPCSCD_ERROR_NONE)
+        {
+            return error;
+        }
     }
     return LIBPCSCD_ERROR_NONE;
 }
@@ -576,7 +587,6 @@ pcscd_establish_context_reply(struct pcscd_context* context,
     struct stream out_s;
     char data[12];
 
-    //printf("pcscd_establish_context_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, scope);
@@ -593,7 +603,6 @@ pcscd_release_context_reply(struct pcscd_context* context,
     struct stream out_s;
     char data[8];
 
-    //printf("pcscd_release_context_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, hcontext);
@@ -612,7 +621,6 @@ pcscd_connect_reply(struct pcscd_context* context, int hcontext,
     char data[152];
     char text[132];
 
-    //printf("pcscd_connect_reply:\n");
     memset(data, 0, sizeof(data));
     out_s.data = data;
     out_s.p = out_s.data;
@@ -636,7 +644,6 @@ pcscd_reconnect_reply(struct pcscd_context* context, int card,
     struct stream out_s;
     char data[24];
 
-    //printf("pcscd_reconnect_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -656,7 +663,6 @@ pcscd_disconnect_reply(struct pcscd_context* context, int card,
     struct stream out_s;
     char data[12];
 
-    //printf("pcscd_disconnect_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -673,7 +679,6 @@ pcscd_begin_transaction_reply(struct pcscd_context* context, int card,
     struct stream out_s;
     char data[8];
 
-    //printf("pcscd_begin_transaction_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -689,7 +694,6 @@ pcscd_end_transaction_reply(struct pcscd_context* context, int card,
     struct stream out_s;
     char data[12];
 
-    //printf("pcscd_end_transaction_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -710,7 +714,6 @@ pcscd_transmit_reply(struct pcscd_context* context, int card,
     char data[32];
     int rv;
 
-    //printf("pcscd_transmit_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -739,7 +742,6 @@ pcscd_control_reply(struct pcscd_context* context, int card, int controlcode,
     char data[24];
     int rv;
 
-    //printf("pcscd_control_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -763,7 +765,6 @@ pcscd_status_reply(struct pcscd_context* context, int card, int result)
     struct stream out_s;
     char data[8];
 
-    //printf("pcscd_status_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -778,7 +779,6 @@ pcscd_cancel_reply(struct pcscd_context* context, int hcontext, int result)
     struct stream out_s;
     char data[8];
 
-    //printf("pcscd_cancel_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, hcontext);
@@ -794,7 +794,6 @@ pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
     struct stream out_s;
     char data[280];
 
-    //printf("pcscd_get_attrib_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -817,7 +816,6 @@ pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
     struct stream out_s;
     char data[280];
 
-    //printf("pcscd_set_attrib_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, card);
@@ -840,7 +838,6 @@ pcscd_cmd_version_reply(struct pcscd_context* context,
     struct stream out_s;
     char data[12];
 
-    //printf("pcscd_cmd_version_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, major);
@@ -859,10 +856,9 @@ pcscd_cmd_get_readers_state_reply(struct pcscd_context* context,
     int send_bytes;
     struct pcsc_reader_state blank_state;
 
-    //printf("pcscd_cmd_get_readers_state_reply:\n");
     if (num_states < 0)
     {
-        return LIBPCSCD_ERROR_PARSE;
+        return LIBPCSCD_ERROR_PARAM;
     }
     if (num_states > 16)
     {
@@ -895,7 +891,6 @@ pcscd_wait_reader_state_change_reply(struct pcscd_context* context,
     struct stream out_s;
     char data[8];
 
-    //printf("pcscd_wait_reader_state_change_reply:\n");
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32_le(&out_s, timeout);

@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) Jay Sorg 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef _LIBPCSCD_H
 #define _LIBPCSCD_H
@@ -7,6 +22,10 @@
 #define LIBPCSCD_ERROR_NEED_MORE            2
 #define LIBPCSCD_ERROR_PARSE                3
 #define LIBPCSCD_ERROR_SEND                 4
+#define LIBPCSCD_ERROR_IMPL                 5
+#define LIBPCSCD_ERROR_CODE                 6
+#define LIBPCSCD_ERROR_MISSED               7
+#define LIBPCSCD_ERROR_PARAM                8
 
 #define LIBPCSCD_VERSION_MAJOR              0
 #define LIBPCSCD_VERSION_MINOR              1
@@ -65,8 +84,10 @@ struct pcscd_context
     int (*cmd_version)(struct pcscd_context* context,
                        int major, int minor, int result);
     int (*cmd_get_readers_state)(struct pcscd_context* context);
-    int (*cmd_wait_reader_state_change)(struct pcscd_context* context);
-    int (*cmd_stop_waiting_reader_state_change)(struct pcscd_context* context);
+    int (*cmd_wait_reader_state_change)(struct pcscd_context* context,
+                                        int timeout, int result);
+    int (*cmd_stop_waiting_reader_state_change)(struct pcscd_context* context,
+                                                int timeout, int result);
     void* user[16];
 };
 

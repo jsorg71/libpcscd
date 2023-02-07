@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) Jay Sorg 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -267,7 +282,8 @@ my_cmd_get_readers_state(struct pcscd_context* context)
 
 /*****************************************************************************/
 static int
-my_cmd_wait_reader_state_change(struct pcscd_context* context)
+my_cmd_wait_reader_state_change(struct pcscd_context* context,
+                                int timeout, int result)
 {
     //printf("my_cmd_wait_reader_state_change:\n");
     /* should only call my_cmd_get_readers_state if version is 4.4+ */
@@ -280,7 +296,8 @@ my_cmd_wait_reader_state_change(struct pcscd_context* context)
 
 /*****************************************************************************/
 static int
-my_cmd_stop_waiting_reader_state_change(struct pcscd_context* context)
+my_cmd_stop_waiting_reader_state_change(struct pcscd_context* context,
+                                        int timeout, int result)
 {
     //printf("my_cmd_stop_waiting_reader_state_change:\n");
     return pcscd_wait_reader_state_change_reply(context, 0, 0);
@@ -357,6 +374,12 @@ main_thread_loop(struct call_test_info* cti)
                     //hexdump(bytes, num_bytes);
                     error = pcscd_process_data_in(cti->context,
                                                   bytes, num_bytes);
+                    if (error != LIBPCSCD_ERROR_NONE)
+                    {
+                        printf("main_thread_loop: pcscd_process_data_in "
+                               "error %d\n", error);
+                        break;
+                    }
                 }
                 else
                 {
@@ -414,8 +437,11 @@ pcsc_thread_loop(void* in)
     rv = SCardBeginTransaction(card);
     printf("pcsc_thread_loop: SCardBeginTransaction rv 0x%8.8x\n", (int)rv);
 
+    memset(attr, 0, 128);
     ior.dwProtocol = 0;
     ior.cbPciLength = 0;
+    ior1.dwProtocol = 0;
+    ior1.cbPciLength = 0;
     attr_len = 128;
     rv = SCardTransmit(1, &ior, attr, attr_len, &ior1, attr, &attr_len);
     printf("pcsc_thread_loop: SCardTransmit rv 0x%8.8x\n", (int)rv);
@@ -432,7 +458,7 @@ pcsc_thread_loop(void* in)
     rv = SCardControl(card, 0, attr, attr_len, attr, attr_len, &attr_len);
     printf("pcsc_thread_loop: SCardControl rv 0x%8.8x\n", (int)rv);
 
-    memset(attr, 0xff, 128);
+    memset(attr, 0xff, 264);
     attr_len = 264;
     rv = SCardSetAttrib(card, 0, attr, attr_len);
     printf("pcsc_thread_loop: SCardSetAttrib rv 0x%8.8x\n", (int)rv);
