@@ -69,9 +69,9 @@ establish_context(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, scope);
-    in_uint32_le(s, hcontext);
-    in_uint32_le(s, result);
+    in_uint32(s, scope);
+    in_uint32(s, hcontext);
+    in_uint32(s, result);
     return self->context.establish_context(&(self->context), scope,
                                            hcontext, result);
 }
@@ -87,8 +87,8 @@ release_context(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, hcontext);
-    in_uint32_le(s, result);
+    in_uint32(s, hcontext);
+    in_uint32(s, result);
     return self->context.release_context(&(self->context), hcontext, result);
 }
 
@@ -108,13 +108,13 @@ connect(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, hcontext);
+    in_uint32(s, hcontext);
     in_uint8p(s, reader, 128);
-    in_uint32_le(s, sharemode);
-    in_uint32_le(s, preferredprotocols);
-    in_uint32_le(s, card);
-    in_uint32_le(s, activeprotocol);
-    in_uint32_le(s, result);
+    in_uint32(s, sharemode);
+    in_uint32(s, preferredprotocols);
+    in_uint32(s, card);
+    in_uint32(s, activeprotocol);
+    in_uint32(s, result);
     return self->context.connect(&(self->context), hcontext, reader,
                                  sharemode, preferredprotocols, card,
                                  activeprotocol, result);
@@ -135,12 +135,12 @@ reconnect(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, sharemode);
-    in_uint32_le(s, preferredprotocols);
-    in_uint32_le(s, initialization);
-    in_uint32_le(s, activeprotocol);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, sharemode);
+    in_uint32(s, preferredprotocols);
+    in_uint32(s, initialization);
+    in_uint32(s, activeprotocol);
+    in_uint32(s, result);
     return self->context.reconnect(&(self->context), card, sharemode,
                                    preferredprotocols, initialization,
                                    activeprotocol, result);
@@ -158,9 +158,9 @@ disconnect(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, disposition);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, disposition);
+    in_uint32(s, result);
     return self->context.disconnect(&(self->context), card,
                                     disposition, result);
 }
@@ -176,8 +176,8 @@ begin_transaction(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, result);
     return self->context.begin_transaction(&(self->context), card, result);
 }
 
@@ -193,9 +193,9 @@ end_transaction(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, disposition);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, disposition);
+    in_uint32(s, result);
     return self->context.end_transaction(&(self->context), card,
                                          disposition, result);
 }
@@ -218,14 +218,14 @@ transmit(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, sendiorprotocol);
-    in_uint32_le(s, sendiorpcilength);
-    in_uint32_le(s, sendbytes);
-    in_uint32_le(s, recviorprotocol);
-    in_uint32_le(s, recviorpcilength);
-    in_uint32_le(s, recvbytes);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, sendiorprotocol);
+    in_uint32(s, sendiorpcilength);
+    in_uint32(s, sendbytes);
+    in_uint32(s, recviorprotocol);
+    in_uint32(s, recviorpcilength);
+    in_uint32(s, recvbytes);
+    in_uint32(s, result);
     senddata = NULL;
     if (sendbytes > 0)
     {
@@ -258,12 +258,12 @@ control(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, controlcode);
-    in_uint32_le(s, sendbytes);
-    in_uint32_le(s, recvbytes);
-    in_uint32_le(s, bytesreturned);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, controlcode);
+    in_uint32(s, sendbytes);
+    in_uint32(s, recvbytes);
+    in_uint32(s, bytesreturned);
+    in_uint32(s, result);
     senddata = NULL;
     if (sendbytes > 0)
     {
@@ -289,8 +289,8 @@ status(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, result);
+    in_uint32(s, card);
+    in_uint32(s, result);
     return self->context.status(&(self->context), card, result);
 }
 
@@ -305,8 +305,8 @@ cancel(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, hcontext);
-    in_uint32_le(s, result);
+    in_uint32(s, hcontext);
+    in_uint32(s, result);
     return self->context.cancel(&(self->context), hcontext, result);
 }
 /*****************************************************************************/
@@ -323,11 +323,11 @@ get_attrib(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, attrid);
+    in_uint32(s, card);
+    in_uint32(s, attrid);
     in_uint8p(s, attr, 264);
-    in_uint32_le(s, attrlen);
-    in_uint32_le(s, result);
+    in_uint32(s, attrlen);
+    in_uint32(s, result);
     return self->context.get_attrib(&(self->context), card, attrid,
                                     attr, attrlen, result);
 }
@@ -346,11 +346,11 @@ set_attrib(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, card);
-    in_uint32_le(s, attrid);
+    in_uint32(s, card);
+    in_uint32(s, attrid);
     in_uint8p(s, attr, 264);
-    in_uint32_le(s, attrlen);
-    in_uint32_le(s, result);
+    in_uint32(s, attrlen);
+    in_uint32(s, result);
     return self->context.set_attrib(&(self->context), card, attrid,
                                     attr, attrlen, result);
 }
@@ -367,9 +367,9 @@ cmd_version(struct pcscd_context_priv* self, struct stream* s)
     {
         return LIBPCSCD_ERROR_PARSE;
     }
-    in_uint32_le(s, major);
-    in_uint32_le(s, minor);
-    in_uint32_le(s, result);
+    in_uint32(s, major);
+    in_uint32(s, minor);
+    in_uint32(s, result);
     return self->context.cmd_version(&(self->context), major, minor, result);
 }
 
@@ -389,8 +389,8 @@ cmd_wait_reader_state_change(struct pcscd_context_priv* self, struct stream* s)
 
     if (s_check_rem(s, 8))
     {
-        in_uint32_le(s, timeout);
-        in_uint32_le(s, result);
+        in_uint32(s, timeout);
+        in_uint32(s, result);
     }
     else
     {
@@ -411,8 +411,8 @@ cmd_stop_waiting_reader_state_change(struct pcscd_context_priv* self,
 
     if (s_check_rem(s, 8))
     {
-        in_uint32_le(s, timeout);
-        in_uint32_le(s, result);
+        in_uint32(s, timeout);
+        in_uint32(s, result);
     }
     else
     {
@@ -474,11 +474,11 @@ pcscd_process_data_in(struct pcscd_context* context,
 
     if (data_bytes < 0)
     {
-        return LIBPCSCD_ERROR_PARSE;
+        return LIBPCSCD_ERROR_PARAM;
     }
-    if ((data == NULL) || (data_bytes == 0))
+    if ((data == NULL) && (data_bytes > 0))
     {
-        return LIBPCSCD_ERROR_NONE;
+        return LIBPCSCD_ERROR_PARAM;
     }
     self = (struct pcscd_context_priv*)context;
     s = &(self->in_s);
@@ -508,8 +508,8 @@ pcscd_process_data_in(struct pcscd_context* context,
         {
             return LIBPCSCD_ERROR_NONE;
         }
-        in_uint32_le(s, size);
-        in_uint32_le(s, code);
+        in_uint32(s, size);
+        in_uint32(s, code);
         if (!s_check_rem(s, size))
         {
             return LIBPCSCD_ERROR_NONE;
@@ -522,8 +522,8 @@ pcscd_process_data_in(struct pcscd_context* context,
                 return LIBPCSCD_ERROR_NONE;
             }
             holdp = s->p;
-            in_uint8s(s, 12);
-            in_uint32_le(s, extrabytes);
+            in_uint8s(s, 12); /* card, sendiorprotocol, sendiorpcilength */
+            in_uint32(s, extrabytes); /* sendbytes */
             s->p = holdp;
         }
         else if (code == 10) /* control */
@@ -533,8 +533,8 @@ pcscd_process_data_in(struct pcscd_context* context,
                 return LIBPCSCD_ERROR_NONE;
             }
             holdp = s->p;
-            in_uint8s(s, 8);
-            in_uint32_le(s, extrabytes);
+            in_uint8s(s, 8); /* card, controlcode */
+            in_uint32(s, extrabytes); /* sendbytes */
             s->p = holdp;
         }
         if (!s_check_rem(s, size + extrabytes))
@@ -558,10 +558,13 @@ pcscd_process_data_in(struct pcscd_context* context,
             error = g_funcs[code](self, s);
         }
         /* check that all the data was processed */
-        missedbytes = (int)(s->end - s->p);
-        if ((error == LIBPCSCD_ERROR_NONE) && (missedbytes != 0))
+        if (error == LIBPCSCD_ERROR_NONE)
         {
-            error = LIBPCSCD_ERROR_MISSED;
+            missedbytes = (int)(s->end - s->p);
+            if (missedbytes != 0)
+            {
+                error = LIBPCSCD_ERROR_MISSED;
+            }
         }
         /* restore p to next message and end to old end */
         s->p = holdp + size;
@@ -589,9 +592,9 @@ pcscd_establish_context_reply(struct pcscd_context* context,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, scope);
-    out_uint32_le(&out_s, hcontext);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, scope);
+    out_uint32(&out_s, hcontext);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 12);
 }
 
@@ -605,8 +608,8 @@ pcscd_release_context_reply(struct pcscd_context* context,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, hcontext);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, hcontext);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 8);
 }
 
@@ -624,14 +627,14 @@ pcscd_connect_reply(struct pcscd_context* context, int hcontext,
     memset(data, 0, sizeof(data));
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, hcontext);
+    out_uint32(&out_s, hcontext);
     strncpy(text, reader, 128);
     out_uint8a(&out_s, text, 128);
-    out_uint32_le(&out_s, sharemode);
-    out_uint32_le(&out_s, preferredprotocols);
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, activeprotocol);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, sharemode);
+    out_uint32(&out_s, preferredprotocols);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, activeprotocol);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 152);
 }
 
@@ -646,12 +649,12 @@ pcscd_reconnect_reply(struct pcscd_context* context, int card,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, sharemode);
-    out_uint32_le(&out_s, preferredprotocols);
-    out_uint32_le(&out_s, activeprotocol);
-    out_uint32_le(&out_s, initialization);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, sharemode);
+    out_uint32(&out_s, preferredprotocols);
+    out_uint32(&out_s, activeprotocol);
+    out_uint32(&out_s, initialization);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 24);
 }
 
@@ -665,9 +668,9 @@ pcscd_disconnect_reply(struct pcscd_context* context, int card,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, disposition);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, disposition);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 12);
 }
 
@@ -681,8 +684,8 @@ pcscd_begin_transaction_reply(struct pcscd_context* context, int card,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 8);
 }
 
@@ -696,9 +699,9 @@ pcscd_end_transaction_reply(struct pcscd_context* context, int card,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, disposition);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, disposition);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 12);
 }
 
@@ -716,14 +719,14 @@ pcscd_transmit_reply(struct pcscd_context* context, int card,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, sendiorprotocol);
-    out_uint32_le(&out_s, sendiorpcilength);
-    out_uint32_le(&out_s, sendbytes);
-    out_uint32_le(&out_s, recviorprotocol);
-    out_uint32_le(&out_s, recviorpcilength);
-    out_uint32_le(&out_s, recvbytes);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, sendiorprotocol);
+    out_uint32(&out_s, sendiorpcilength);
+    out_uint32(&out_s, sendbytes);
+    out_uint32(&out_s, recviorprotocol);
+    out_uint32(&out_s, recviorpcilength);
+    out_uint32(&out_s, recvbytes);
+    out_uint32(&out_s, result);
     rv = context->send_to_app(context, out_s.data, 32);
     if ((rv == LIBPCSCD_ERROR_NONE) && (recvbytes > 0))
     {
@@ -744,12 +747,12 @@ pcscd_control_reply(struct pcscd_context* context, int card, int controlcode,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, controlcode);
-    out_uint32_le(&out_s, sendbytes);
-    out_uint32_le(&out_s, recvbytes);
-    out_uint32_le(&out_s, bytesreturned);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, controlcode);
+    out_uint32(&out_s, sendbytes);
+    out_uint32(&out_s, recvbytes);
+    out_uint32(&out_s, bytesreturned);
+    out_uint32(&out_s, result);
     rv = context->send_to_app(context, out_s.data, 24);
     if ((rv == LIBPCSCD_ERROR_NONE) && (bytesreturned > 0))
     {
@@ -767,8 +770,8 @@ pcscd_status_reply(struct pcscd_context* context, int card, int result)
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 8);
 }
 
@@ -781,8 +784,8 @@ pcscd_cancel_reply(struct pcscd_context* context, int hcontext, int result)
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, hcontext);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, hcontext);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 8);
 }
 
@@ -796,15 +799,15 @@ pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, attrid);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, attrid);
     out_uint8a(&out_s, attr, attrlen);
     if (attrlen < 264)
     {
         out_uint8s(&out_s, 264 - attrlen);
     }
-    out_uint32_le(&out_s, attrlen);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, attrlen);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 280);
 }
 
@@ -818,15 +821,15 @@ pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, card);
-    out_uint32_le(&out_s, attrid);
+    out_uint32(&out_s, card);
+    out_uint32(&out_s, attrid);
     out_uint8a(&out_s, attr, attrlen);
     if (attrlen < 264)
     {
         out_uint8s(&out_s, 264 - attrlen);
     }
-    out_uint32_le(&out_s, attrlen);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, attrlen);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 280);
 }
 
@@ -840,9 +843,9 @@ pcscd_cmd_version_reply(struct pcscd_context* context,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, major);
-    out_uint32_le(&out_s, minor);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, major);
+    out_uint32(&out_s, minor);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 12);
 }
 
@@ -893,7 +896,7 @@ pcscd_wait_reader_state_change_reply(struct pcscd_context* context,
 
     out_s.data = data;
     out_s.p = out_s.data;
-    out_uint32_le(&out_s, timeout);
-    out_uint32_le(&out_s, result);
+    out_uint32(&out_s, timeout);
+    out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 8);
 }

@@ -23,6 +23,14 @@
 #define xnew(_type, _num) (_type *) malloc((_num) * sizeof(_type));
 #define xnew0(_type, _num) (_type *) calloc(_num, sizeof(_type));
 
+#if defined(B_ENDIAN)
+#define in_uint32 in_uint32_be
+#define out_uint32 out_uint32_be
+#else
+#define in_uint32 in_uint32_le
+#define out_uint32 out_uint32_le
+#endif
+
 struct pcscd_context_priv
 {
     struct pcscd_context context;

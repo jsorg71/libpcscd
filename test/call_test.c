@@ -38,8 +38,22 @@ struct call_test_info
     struct pcscd_context* context;
     int listen_sck;
     int sck;
-    int thread_sck;
-    int got_con;;
+    int sockets[2]; /* thread socket pair */
+    int got_con;
+    pthread_mutex_t mutex;
+    struct establish_context_test_info
+    {
+        volatile int callcount;
+        int dwscope[2];
+        int hcontext[2];
+        int result[2];
+    } establish_context_test;
+    struct release_context_test_info
+    {
+        volatile int callcount;
+        int hcontext[2];
+        int result[2];
+    } release_context_test;
 };
 
 /*****************************************************************************/
@@ -115,17 +129,38 @@ static int
 my_establish_context(struct pcscd_context* context,
                      int dwscope, int hcontext, int result)
 {
+    struct call_test_info* cti;
+
     //printf("my_establish_context: dwscope %d hcontext %d result %d\n",
     //       dwscope, hcontext, result);
-    //return pcscd_establish_context_reply(context, dwscope, hcontext, result);
-    return pcscd_establish_context_reply(context, dwscope, 1, result);
+    cti = (struct call_test_info*)(context->user[0]);
+    pthread_mutex_lock(&(cti->mutex));
+    cti->establish_context_test.callcount++;
+    cti->establish_context_test.dwscope[0] = dwscope;
+    cti->establish_context_test.hcontext[0] = hcontext;
+    cti->establish_context_test.result[0] = result;
+    dwscope = cti->establish_context_test.dwscope[1];
+    hcontext = cti->establish_context_test.hcontext[1];
+    result = cti->establish_context_test.result[1];
+    pthread_mutex_unlock(&(cti->mutex));
+    return pcscd_establish_context_reply(context, dwscope, hcontext, result);
 }
 
 /*****************************************************************************/
 static int
 my_release_context(struct pcscd_context* context, int hcontext, int result)
 {
+    struct call_test_info* cti;
+
     //printf("my_release_context: hcontext %d result %d\n", hcontext, result);
+    cti = (struct call_test_info*)(context->user[0]);
+    pthread_mutex_lock(&(cti->mutex));
+    cti->release_context_test.callcount++;
+    cti->release_context_test.hcontext[0] = hcontext;
+    cti->release_context_test.result[0] = result;
+    hcontext = cti->release_context_test.hcontext[1];
+    result = cti->release_context_test.result[1];
+    pthread_mutex_unlock(&(cti->mutex));
     return pcscd_release_context_reply(context, hcontext, result);
 }
 
@@ -320,7 +355,7 @@ main_thread_loop(struct call_test_info* cti)
     struct sockaddr_un s;
     char bytes[32];
 
-    printf("main_thread_loop: sck %d\n", cti->thread_sck);
+    printf("main_thread_loop: sck %d\n", cti->sockets[0]);
     for (;;)
     {
         memset(&time, 0, sizeof(time));
@@ -328,8 +363,8 @@ main_thread_loop(struct call_test_info* cti)
         FD_ZERO(&rfds);
         FD_SET(cti->listen_sck, &rfds);
         max_fd = cti->listen_sck;
-        FD_SET(cti->thread_sck, &rfds);
-        max_fd = LMAX(cti->thread_sck, max_fd);
+        FD_SET(cti->sockets[0], &rfds);
+        max_fd = LMAX(cti->sockets[0], max_fd);
         if (cti->got_con)
         {
             FD_SET(cti->sck, &rfds);
@@ -359,7 +394,7 @@ main_thread_loop(struct call_test_info* cti)
                     }
                 }
             }
-            if (FD_ISSET(cti->thread_sck, &rfds))
+            if (FD_ISSET(cti->sockets[0], &rfds))
             {
                 printf("main_thread_loop: thread_sck set\n");
                 break;
@@ -392,13 +427,34 @@ main_thread_loop(struct call_test_info* cti)
 }
 
 /*****************************************************************************/
+static int
+pcsc_thread_wait(struct call_test_info* cti, int in_callcount,
+                 volatile int* acallcount)
+{
+    int lcallcout;
+
+    for (;;)
+    {
+        pthread_mutex_lock(&(cti->mutex));
+        lcallcout = *acallcount;
+        pthread_mutex_unlock(&(cti->mutex));
+        if (lcallcout != in_callcount)
+        {
+            break;
+        }
+        usleep(1000);
+    }
+    return 0;
+}
+
+/*****************************************************************************/
 static void*
 pcsc_thread_loop(void* in)
 {
     DWORD bytes;
     LONG rv;
-    SCARDCONTEXT context;
-    int sck;
+    SCARDCONTEXT hcontext;
+    DWORD dwscope;
     SCARD_READERSTATE cards[4];
     SCARDHANDLE card;
     DWORD proto;
@@ -409,29 +465,60 @@ pcsc_thread_loop(void* in)
     DWORD attr_len;
     SCARD_IO_REQUEST ior;
     SCARD_IO_REQUEST ior1;
+    struct call_test_info* cti;
+    int callcount;
 
-    sck = (int)(intptr_t)in;
-    printf("pcsc_thread_loop: sck %d pid %d\n", sck, getpid());
+    cti = (struct call_test_info*)in;
+    printf("pcsc_thread_loop: sck %d pid %d\n", cti->sockets[1], getpid());
 
-    rv = SCardEstablishContext(SCARD_SCOPE_USER, NULL, NULL, &context);
-    printf("pcsc_thread_loop: SCardEstablishContext rv 0x%8.8x context %d\n",
-           (int)rv, (int)context);
-
-    rv = SCardIsValidContext(context);
+    pthread_mutex_lock(&(cti->mutex));
+    callcount = cti->establish_context_test.callcount;
+    cti->establish_context_test.dwscope[1] = SCARD_SCOPE_USER;
+    cti->establish_context_test.hcontext[1] = 11;
+    cti->establish_context_test.result[1] = SCARD_S_SUCCESS;
+    pthread_mutex_unlock(&(cti->mutex));
+    rv = SCardEstablishContext(SCARD_SCOPE_USER, NULL, NULL, &hcontext);
+    printf("pcsc_thread_loop: SCardEstablishContext rv 0x%8.8x hcontext %d\n",
+           (int)rv, (int)hcontext);
+    pcsc_thread_wait(cti, callcount, &(cti->establish_context_test.callcount));
+    if ((hcontext == 11) && (rv == SCARD_S_SUCCESS))
+    {
+        printf("pcsc_thread_loop: SCardEstablishContext - hcontext, rv pass\n");
+    }
+    else
+    {
+        printf("pcsc_thread_loop: SCardEstablishContext - hcontext, rv fail\n");
+    }
+    pthread_mutex_lock(&(cti->mutex));
+    dwscope = cti->establish_context_test.dwscope[0];
+    pthread_mutex_unlock(&(cti->mutex));
+    if (dwscope == SCARD_SCOPE_USER)
+    {
+        printf("pcsc_thread_loop: SCardEstablishContext - dwscope pass\n");
+    }
+    else
+    {
+        printf("pcsc_thread_loop: SCardEstablishContext - dwscope fail %d\n", (int)dwscope);
+    }
+    
+    rv = SCardIsValidContext(12);
     printf("pcsc_thread_loop: SCardIsValidContext rv 0x%8.8x\n", (int)rv);
 
-    rv = SCardListReaders(context, NULL, NULL, &bytes);
+    rv = SCardIsValidContext(hcontext);
+    printf("pcsc_thread_loop: SCardIsValidContext rv 0x%8.8x\n", (int)rv);
+
+    rv = SCardListReaders(hcontext, NULL, NULL, &bytes);
     printf("pcsc_thread_loop: SCardListReaders rv 0x%8.8x\n", (int)rv);
     memset(cards, 0, sizeof(cards));
 
     cards[0].szReader = "\\\\?PnP?\\Notification";
-    rv = SCardGetStatusChange(context, 1000, cards, 1);
+    rv = SCardGetStatusChange(hcontext, 1000, cards, 1);
     printf("pcsc_thread_loop: SCardGetStatusChange rv 0x%8.8x\n", (int)rv);
 
-    rv = SCardConnect(context, "jay", 0, 0, &card, &proto);
+    rv = SCardConnect(hcontext, "jay", 0, 0, &card, &proto);
     printf("pcsc_thread_loop: SCardConnect rv 0x%8.8x card %d proto %d\n", (int)rv, (int)card, (int)proto);
 
-    rv = SCardReconnect(context, card, 0, 0, &proto);
+    rv = SCardReconnect(hcontext, card, 0, 0, &proto);
     printf("pcsc_thread_loop: SCardReconnect rv 0x%8.8x\n", (int)rv);
 
     rv = SCardBeginTransaction(card);
@@ -468,16 +555,20 @@ pcsc_thread_loop(void* in)
     rv = SCardGetAttrib(card, 0xe, attr, &attr_len);
     printf("pcsc_thread_loop: SCardGetAttrib rv 0x%8.8x\n", (int)rv);
 
-    rv = SCardDisconnect(context, card);
+    rv = SCardDisconnect(hcontext, card);
     printf("pcsc_thread_loop: SCardDisconnect rv 0x%8.8x\n", (int)rv);
 
-    rv = SCardCancel(context);
+    rv = SCardCancel(hcontext);
     printf("pcsc_thread_loop: SCardCancel rv 0x%8.8x\n", (int)rv);
 
-    rv = SCardReleaseContext(context);
+    pthread_mutex_lock(&(cti->mutex));
+    cti->release_context_test.hcontext[1] = hcontext;
+    cti->release_context_test.result[1] = SCARD_S_SUCCESS;
+    pthread_mutex_unlock(&(cti->mutex));
+    rv = SCardReleaseContext(hcontext);
     printf("pcsc_thread_loop: SCardReleaseContext rv 0x%8.8x\n", (int)rv);
 
-    close(sck);
+    close(cti->sockets[1]);
     return 0;
 }
 
@@ -487,27 +578,25 @@ listening(struct call_test_info* cti)
 {
     pthread_t thread;
     int rv;
-    int sockets[2];
     void* thread_in;
 
     printf("listening\n");
     setenv("PCSCLITE_CSOCK_NAME", LUDS_SCK_FILE, 1);
-    rv = socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
+    rv = socketpair(AF_UNIX, SOCK_STREAM, 0, cti->sockets);
     if (rv == 0)
     {
-        thread_in = (void*)(intptr_t)sockets[1];
+        thread_in = (void*)(intptr_t)cti;
         rv = pthread_create(&thread, 0, pcsc_thread_loop, thread_in);
         if (rv == 0)
         {
             pthread_detach(thread);
-            cti->thread_sck = sockets[0];
             rv = main_thread_loop(cti);
         }
         else
         {
-            close(sockets[1]);
+            close(cti->sockets[1]);
         }
-        close(sockets[0]);
+        close(cti->sockets[0]);
     }
     return rv;
 }
@@ -556,6 +645,7 @@ main(int argc, char** argv)
 
     memset(&cti, 0, sizeof(cti));
     memset(&settings, 0, sizeof(settings));
+    pthread_mutex_init(&(cti.mutex), NULL);
     error = pcscd_create_context(&settings, &context);
     if (error == LIBPCSCD_ERROR_NONE)
     {
