@@ -48,6 +48,8 @@ struct pcscd_settings
 
 struct pcscd_context
 {
+    int (*log_msg)(struct pcscd_context* context, int log_level,
+                   const char* msg, ...);
     int (*send_to_app)(struct pcscd_context* context,
                        const void* data, int bytes);
     int (*establish_context)(struct pcscd_context* context,

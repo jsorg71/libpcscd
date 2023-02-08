@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -98,6 +99,20 @@ hexdump(const void* p, int len)
         offset += thisline;
         line += thisline;
     }
+}
+
+/*****************************************************************************/
+static int
+my_log_msg(struct pcscd_context* context, int log_level, const char* msg, ...)
+{
+    va_list ap;
+    char text[256];
+
+    va_start(ap, msg);
+    vsnprintf(text, 256, msg, ap);
+    printf("%s\n", text);
+    va_end(ap);
+    return 0;
 }
 
 /*****************************************************************************/
@@ -649,6 +664,7 @@ main(int argc, char** argv)
     error = pcscd_create_context(&settings, &context);
     if (error == LIBPCSCD_ERROR_NONE)
     {
+        context->log_msg = my_log_msg;
         context->send_to_app = my_send_to_app;
         context->establish_context = my_establish_context;
         context->release_context = my_release_context;

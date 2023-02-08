@@ -23,6 +23,7 @@
 #define xnew(_type, _num) (_type *) malloc((_num) * sizeof(_type));
 #define xnew0(_type, _num) (_type *) calloc(_num, sizeof(_type));
 
+/* on big endian write and read big endian */
 #if defined(B_ENDIAN)
 #define in_uint32 in_uint32_be
 #define out_uint32 out_uint32_be
@@ -36,5 +37,39 @@ struct pcscd_context_priv
     struct pcscd_context context;
     struct stream in_s;
 };
+
+#define LOG_ERROR lctx, 0
+#define LOG_WARN  lctx, 1
+#define LOG_INFO  lctx, 2
+#define LOG_DEBUG lctx, 3
+
+#define LOGS "[%s][%d][%s]:"
+#define LOGP __FILE__, __LINE__, __FUNCTION__
+
+#if !defined(__FUNCTION__) && defined(__FUNC__)
+#define LOG_PRE const char* __FUNCTION__ = __FUNC__; (void)__FUNCTION__;
+#else
+#define LOG_PRE
+#endif
+
+#if !defined(LOG_LEVEL)
+#define LOG_LEVEL 1
+#endif
+#if LOG_LEVEL > 0
+#define LOGLN(_context, _args) do { \
+    struct pcscd_context* lctx = _context; \
+    LOG_PRE \
+    lctx->log_msg _args ; } while (0)
+#else
+#define LOGLN(_context, _args)
+#endif
+#if LOG_LEVEL > 10
+#define LOGLND(_context, _args) do { \
+    struct pcscd_context* lctx = _context; \
+    LOG_PRE \
+    lctx->log_msg _args ; } while (0)
+#else
+#define LOGLND(_context, _args)
+#endif
 
 #endif
