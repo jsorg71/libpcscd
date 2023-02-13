@@ -895,6 +895,7 @@ pcscd_cmd_get_readers_state_reply(struct pcscd_context* context,
     LOGLND(context, (LOG_INFO, LOGS, LOGP));
     if (num_states < 0)
     {
+        LOGLND(context, (LOG_ERROR, LOGS "num_states %d", LOGP, num_states));
         return LIBPCSCD_ERROR_PARAM;
     }
     if (num_states > 16)
