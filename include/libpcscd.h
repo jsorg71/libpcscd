@@ -80,7 +80,7 @@ struct pcscd_context
     int (*status)(struct pcscd_context* context, int card, int result);
     int (*cancel)(struct pcscd_context* context, int hcontext, int result);
     int (*get_attrib)(struct pcscd_context* context, int card, int attrid,
-                      const char* attr, int attrlen, int result);
+                      char* attr, int attrlen, int result);
     int (*set_attrib)(struct pcscd_context* context, int card, int attrid,
                       const char* attr, int attrlen, int result);
     int (*cmd_version)(struct pcscd_context* context,

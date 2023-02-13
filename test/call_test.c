@@ -170,6 +170,14 @@ struct call_test_info
         volatile int callcount;
         struct pcsc_reader_state states[16];
     } cmd_get_readers_state_test;
+    struct cmd_wait_reader_state_change_test_info
+    {
+        volatile int callcount;
+    } cmd_wait_reader_state_change_test;
+    struct cmd_stop_waiting_reader_state_change_test_info
+    {
+        volatile int callcount;
+    } cmd_stop_waiting_reader_state_change_test;
 };
 
 /*****************************************************************************/
@@ -232,7 +240,7 @@ my_log_msg(struct pcscd_context* context, int log_level, const char* msg, ...)
     char text[256];
 
     va_start(ap, msg);
-    vsnprintf(text, 256, msg, ap);
+    vsnprintf(text, sizeof(text), msg, ap);
     printf("[%s]%s\n", g_log_pre[log_level % 4], text);
     va_end(ap);
     return 0;
@@ -518,7 +526,8 @@ my_get_attrib(struct pcscd_context* context, int card, int attrid,
     memcpy(attr, cti->get_attrib_test.out_attr, attrlen);
     result = cti->get_attrib_test.out_result;
     pthread_mutex_unlock(&(cti->mutex));
-    return pcscd_get_attrib_reply(context, card, attrid, attr, attrlen, result);
+    return pcscd_get_attrib_reply(context, card, attrid,
+                                  attr, attrlen, result);
 }
 
 /*****************************************************************************/
@@ -543,7 +552,8 @@ my_set_attrib(struct pcscd_context* context, int card, int attrid,
     memcpy(cti->set_attrib_test.in_attr, attr, attrlen);
     result = cti->set_attrib_test.out_result;
     pthread_mutex_unlock(&(cti->mutex));
-    return pcscd_set_attrib_reply(context, card, attrid, attr, attrlen, result);
+    return pcscd_set_attrib_reply(context, card, attrid,
+                                  attr, attrlen, result);
 }
 
 /*****************************************************************************/
@@ -595,7 +605,13 @@ static int
 my_cmd_wait_reader_state_change(struct pcscd_context* context,
                                 int timeout, int result)
 {
+    struct call_test_info* cti;
+
     //printf("my_cmd_wait_reader_state_change:\n");
+    cti = (struct call_test_info*)(context->user[0]);
+    pthread_mutex_lock(&(cti->mutex));
+    cti->cmd_wait_reader_state_change_test.callcount++;
+    pthread_mutex_unlock(&(cti->mutex));
     /* should only call my_cmd_get_readers_state if version is 4.4+ */
     if (g_version_major > 4 || (g_version_major > 3 && g_version_minor > 3))
     {
@@ -609,7 +625,13 @@ static int
 my_cmd_stop_waiting_reader_state_change(struct pcscd_context* context,
                                         int timeout, int result)
 {
+    struct call_test_info* cti;
+
     //printf("my_cmd_stop_waiting_reader_state_change:\n");
+    cti = (struct call_test_info*)(context->user[0]);
+    pthread_mutex_lock(&(cti->mutex));
+    cti->cmd_stop_waiting_reader_state_change_test.callcount++;
+    pthread_mutex_unlock(&(cti->mutex));
     return pcscd_wait_reader_state_change_reply(context, timeout, result);
 }
 
