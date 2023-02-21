@@ -143,7 +143,7 @@ struct call_test_info
         int in_card;
         int in_attrid;
         int in_attrlen;
-        char* out_attr;
+        void* out_attr;
         int out_attrlen;
         int out_result;
     } get_attrib_test;
@@ -153,7 +153,7 @@ struct call_test_info
         int in_card;
         int in_attrid;
         int in_attrlen;
-        char* in_attr;
+        const void* in_attr;
         int out_result;
     } set_attrib_test;
     struct my_cmd_version_test_info
@@ -523,7 +523,7 @@ my_get_attrib(struct pcscd_context* context, int card, int attrid,
     cti->get_attrib_test.in_attrid = attrid;
     cti->get_attrib_test.in_attrlen = attrlen;
     attrlen = cti->get_attrib_test.out_attrlen;
-    memcpy(attr, cti->get_attrib_test.out_attr, attrlen);
+    cti->get_attrib_test.out_attr = attr;
     result = cti->get_attrib_test.out_result;
     pthread_mutex_unlock(&(cti->mutex));
     return pcscd_get_attrib_reply(context, card, attrid,
@@ -549,7 +549,7 @@ my_set_attrib(struct pcscd_context* context, int card, int attrid,
     cti->set_attrib_test.in_card = card;
     cti->set_attrib_test.in_attrid = attrid;
     cti->set_attrib_test.in_attrlen = attrlen;
-    memcpy(cti->set_attrib_test.in_attr, attr, attrlen);
+    cti->set_attrib_test.in_attr = attr;
     result = cti->set_attrib_test.out_result;
     pthread_mutex_unlock(&(cti->mutex));
     return pcscd_set_attrib_reply(context, card, attrid,
