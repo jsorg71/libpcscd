@@ -106,12 +106,12 @@ struct call_test_info
         int in_recviorprotocol;
         int in_recviorpcilength;
         int in_recvbytes;
-        const char* in_senddata;
+        const void* in_senddata;
         int out_recviorprotocol;
         int out_recviorpcilength;
         int out_recvbytes;
         int out_result;
-        char* out_recvdata;
+        void* out_recvdata;
     } transmit_test;
     struct control_test_info // not done
     {
@@ -120,10 +120,10 @@ struct call_test_info
         int in_controlcode;
         int in_sendbytes;
         int in_recvbytes;
-        const char* in_senddata;
+        const void* in_senddata;
         int out_bytesreturned;
         int out_result;
-        char* out_recvdata;
+        void* out_recvdata;
     } control_test;
     struct status_test_info
     {
@@ -143,7 +143,7 @@ struct call_test_info
         int in_card;
         int in_attrid;
         int in_attrlen;
-        char* out_attr[264];
+        char* out_attr;
         int out_attrlen;
         int out_result;
     } get_attrib_test;
@@ -153,7 +153,7 @@ struct call_test_info
         int in_card;
         int in_attrid;
         int in_attrlen;
-        char* in_attr[264];
+        char* in_attr;
         int out_result;
     } set_attrib_test;
     struct my_cmd_version_test_info
@@ -413,7 +413,7 @@ my_transmit(struct pcscd_context* context, int card,
             int sendiorprotocol, int sendiorpcilength,
             int sendbytes,
             int recviorprotocol, int recviorpcilength,
-            int recvbytes, int result, const char* senddata)
+            int recvbytes, int result, const void* senddata)
 {
     struct call_test_info* cti;
     char* recvdata;
@@ -448,7 +448,7 @@ my_transmit(struct pcscd_context* context, int card,
 static int
 my_control(struct pcscd_context* context, int card, int controlcode,
            int sendbytes, int recvbytes, int bytesreturned,
-           int result, const char* senddata)
+           int result, const void* senddata)
 {
     struct call_test_info* cti;
     char* recvdata;
@@ -506,7 +506,7 @@ my_cancel(struct pcscd_context* context, int hcontext, int result)
 /*****************************************************************************/
 static int
 my_get_attrib(struct pcscd_context* context, int card, int attrid,
-              char* attr, int attrlen, int result)
+              void* attr, int attrlen, int result)
 {
     struct call_test_info* cti;
 
@@ -533,7 +533,7 @@ my_get_attrib(struct pcscd_context* context, int card, int attrid,
 /*****************************************************************************/
 static int
 my_set_attrib(struct pcscd_context* context, int card, int attrid,
-              const char* attr, int attrlen, int result)
+              const void* attr, int attrlen, int result)
 {
     struct call_test_info* cti;
 
@@ -1062,8 +1062,10 @@ main(int argc, char** argv)
         context->set_attrib = my_set_attrib;
         context->cmd_version = my_cmd_version;
         context->cmd_get_readers_state = my_cmd_get_readers_state;
-        context->cmd_wait_reader_state_change = my_cmd_wait_reader_state_change;
-        context->cmd_stop_waiting_reader_state_change = my_cmd_stop_waiting_reader_state_change;
+        context->cmd_wait_reader_state_change =
+            my_cmd_wait_reader_state_change;
+        context->cmd_stop_waiting_reader_state_change =
+            my_cmd_stop_waiting_reader_state_change;
         context->user[0] = &cti;
         cti.context = context;
         start_uds(&cti);

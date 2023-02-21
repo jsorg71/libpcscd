@@ -30,13 +30,16 @@
 #define LIBPCSCD_VERSION_MAJOR              0
 #define LIBPCSCD_VERSION_MINOR              1
 
+#define LIBPCSCD_MAX_READER_NAME_LEN        128
+#define LIBPCSCD_CARD_ATR_LEN               36
+
 struct pcsc_reader_state
 {
-    char readerName[128];
+    char readerName[LIBPCSCD_MAX_READER_NAME_LEN];
     int eventCounter;
     int readerState;
     int readerSharing;
-    char cardAtr[36];
+    char cardAtr[LIBPCSCD_CARD_ATR_LEN];
     int cardAtrLength;
     int cardProtocol;
 };
@@ -44,6 +47,7 @@ struct pcsc_reader_state
 struct pcscd_settings
 {
     int pad0;
+    int pad1;
 };
 
 struct pcscd_context
@@ -73,16 +77,16 @@ struct pcscd_context
                     int send_ior_protocol, int send_ior_pcilength,
                     int send_bytes,
                     int recv_ior_protocol, int recv_ior_pcilength,
-                    int recv_bytes, int result, const char* senddata);
+                    int recv_bytes, int result, const void* senddata);
     int (*control)(struct pcscd_context* context, int card, int controlcode,
                    int sendbytes, int recvbytes, int bytesreturned,
-                   int result, const char* senddata);
+                   int result, const void* senddata);
     int (*status)(struct pcscd_context* context, int card, int result);
     int (*cancel)(struct pcscd_context* context, int hcontext, int result);
     int (*get_attrib)(struct pcscd_context* context, int card, int attrid,
-                      char* attr, int attrlen, int result);
+                      void* attr, int attrlen, int result);
     int (*set_attrib)(struct pcscd_context* context, int card, int attrid,
-                      const char* attr, int attrlen, int result);
+                      const void* attr, int attrlen, int result);
     int (*cmd_version)(struct pcscd_context* context,
                        int major, int minor, int result);
     int (*cmd_get_readers_state)(struct pcscd_context* context);
@@ -131,21 +135,21 @@ pcscd_transmit_reply(struct pcscd_context* context, int card,
                      int sendiorprotocol, int sendiorpcilength,
                      int sendbytes,
                      int recviorprotocol, int recviorpcilength,
-                     int recvbytes, int result, const char* recvdata);
+                     int recvbytes, int result, const void* recvdata);
 int
 pcscd_control_reply(struct pcscd_context* context, int card, int controlcode,
                     int sendbytes, int recvbytes, int bytesreturned,
-                    int result, const char* recvdata);
+                    int result, const void* recvdata);
 int
 pcscd_status_reply(struct pcscd_context* context, int card, int result);
 int
 pcscd_cancel_reply(struct pcscd_context* context, int hcontext, int result);
 int
 pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
-                       const char* attr, int attrlen, int result);
+                       const void* attr, int attrlen, int result);
 int
 pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
-                       const char* attr, int attrlen, int result);
+                       const void* attr, int attrlen, int result);
 int
 pcscd_cmd_version_reply(struct pcscd_context* context,
                         int major, int minor, int result);

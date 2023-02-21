@@ -28,7 +28,15 @@
 #include "arch.h"
 
 #if defined(L_ENDIAN)
+#define in_uint16 in_uint16_le
+#define in_uint32 in_uint32_le
+#define out_uint16 out_uint16_le
+#define out_uint32 out_uint32_le
 #elif defined(B_ENDIAN)
+#define in_uint16 in_uint16_be
+#define in_uint32 in_uint32_be
+#define out_uint16 out_uint16_be
+#define out_uint32 out_uint32_be
 #else
 #error Unknown endianness.
 #endif

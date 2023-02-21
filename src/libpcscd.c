@@ -23,6 +23,161 @@
 #include "libpcscd_priv.h"
 
 /*****************************************************************************/
+static int
+default_log_msg(struct pcscd_context* context, int log_level,
+                const char* msg, ...)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_send_to_app(struct pcscd_context* context,
+                    const void* data, int bytes)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_establish_context(struct pcscd_context* context,
+                          int dwscope, int hcontext, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_release_context(struct pcscd_context* context,
+                        int hcontext, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_connect(struct pcscd_context* context, int hcontext,
+                const char* reader, int sharemode,
+                int preferredprotocols, int card,
+                int activeprotocol, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_reconnect(struct pcscd_context* context, int card,
+                  int sharemode, int preferredprotocols,
+                  int initialization, int activeprotocol, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_disconnect(struct pcscd_context* context, int card,
+                   int disposition, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_begin_transaction(struct pcscd_context* context,
+                          int card, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_end_transaction(struct pcscd_context* context,
+                        int card, int disposition, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_transmit(struct pcscd_context* context, int card,
+                 int send_ior_protocol, int send_ior_pcilength,
+                 int send_bytes,
+                 int recv_ior_protocol, int recv_ior_pcilength,
+                 int recv_bytes, int result, const void* senddata)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_control(struct pcscd_context* context, int card, int controlcode,
+                int sendbytes, int recvbytes, int bytesreturned,
+                int result, const void* senddata)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_status(struct pcscd_context* context, int card, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_cancel(struct pcscd_context* context, int hcontext, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_get_attrib(struct pcscd_context* context, int card, int attrid,
+                   void* attr, int attrlen, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_set_attrib(struct pcscd_context* context, int card, int attrid,
+                   const void* attr, int attrlen, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_cmd_version(struct pcscd_context* context,
+                    int major, int minor, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_cmd_get_readers_state(struct pcscd_context* context)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
+static int
+default_cmd_wait_reader_state_change(struct pcscd_context* context,
+                                     int timeout, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+/*****************************************************************************/
+static int
+default_cmd_stop_waiting_reader_state_change(struct pcscd_context* context,
+                                             int timeout, int result)
+{
+    return LIBPCSCD_ERROR_NONE;
+}
+
+/*****************************************************************************/
 int
 pcscd_create_context(struct pcscd_settings* settings,
                      struct pcscd_context** context)
@@ -34,6 +189,27 @@ pcscd_create_context(struct pcscd_settings* settings,
     {
         return LIBPCSCD_ERROR_MEMORY;
     }
+    self->context.log_msg = default_log_msg;
+    self->context.send_to_app = default_send_to_app;
+    self->context.establish_context = default_establish_context;
+    self->context.release_context = default_release_context;
+    self->context.connect = default_connect;
+    self->context.reconnect = default_reconnect;
+    self->context.disconnect = default_disconnect;
+    self->context.begin_transaction = default_begin_transaction;
+    self->context.end_transaction = default_end_transaction;
+    self->context.transmit = default_transmit;
+    self->context.control = default_control;
+    self->context.status = default_status;
+    self->context.cancel = default_cancel;
+    self->context.get_attrib = default_get_attrib;
+    self->context.set_attrib = default_set_attrib;
+    self->context.cmd_version = default_cmd_version;
+    self->context.cmd_get_readers_state = default_cmd_get_readers_state;
+    self->context.cmd_wait_reader_state_change =
+        default_cmd_wait_reader_state_change;
+    self->context.cmd_stop_waiting_reader_state_change =
+        default_cmd_stop_waiting_reader_state_change;
     *context = &(self->context);
     return LIBPCSCD_ERROR_NONE;
 }
@@ -525,19 +701,23 @@ pcscd_process_data_in(struct pcscd_context* context,
     {
         if (!s_check_rem(s, 8))
         {
+            /* not enough yet, ok */
             return LIBPCSCD_ERROR_NONE;
         }
         in_uint32(s, size);
         in_uint32(s, code);
         if (!s_check_rem(s, size))
         {
+            /* not enough yet, ok */
             return LIBPCSCD_ERROR_NONE;
         }
+        /* transmit and control have some extra data after the message */
         extrabytes = 0;
         if (code == 9) /* tramsit */
         {
             if (!s_check_rem(s, 16))
             {
+                /* not enough yet, ok */
                 return LIBPCSCD_ERROR_NONE;
             }
             holdp = s->p;
@@ -549,6 +729,7 @@ pcscd_process_data_in(struct pcscd_context* context,
         {
             if (!s_check_rem(s, 12))
             {
+                /* not enough yet, ok */
                 return LIBPCSCD_ERROR_NONE;
             }
             holdp = s->p;
@@ -558,6 +739,7 @@ pcscd_process_data_in(struct pcscd_context* context,
         }
         if (!s_check_rem(s, size + extrabytes))
         {
+            /* not enough yet, ok */
             return LIBPCSCD_ERROR_NONE;
         }
         /* at this point we can not return til bottom of loop */
@@ -588,7 +770,7 @@ pcscd_process_data_in(struct pcscd_context* context,
         /* restore p to next message and end to old end */
         s->p = holdp + size;
         s->end = holdend;
-        /* what is left, move up, can be zero */
+        /* what is left, move up, left can be zero */
         left = (int)(s->end - s->p);
         memmove(s->data, s->data + 8 + size, left);
         s->end -= 8 + size;
@@ -643,15 +825,15 @@ pcscd_connect_reply(struct pcscd_context* context, int hcontext,
 {
     struct stream out_s;
     char data[152];
-    char text[132];
+    char text[LIBPCSCD_MAX_READER_NAME_LEN + 16];
 
     LOGLND(context, (LOG_INFO, LOGS, LOGP));
     memset(data, 0, sizeof(data));
     out_s.data = data;
     out_s.p = out_s.data;
     out_uint32(&out_s, hcontext);
-    strncpy(text, reader, 128);
-    out_uint8a(&out_s, text, 128);
+    strncpy(text, reader, LIBPCSCD_MAX_READER_NAME_LEN);
+    out_uint8a(&out_s, text, LIBPCSCD_MAX_READER_NAME_LEN);
     out_uint32(&out_s, sharemode);
     out_uint32(&out_s, preferredprotocols);
     out_uint32(&out_s, card);
@@ -737,7 +919,7 @@ pcscd_transmit_reply(struct pcscd_context* context, int card,
                      int sendiorprotocol, int sendiorpcilength,
                      int sendbytes,
                      int recviorprotocol, int recviorpcilength,
-                     int recvbytes, int result, const char* recvdata)
+                     int recvbytes, int result, const void* recvdata)
 {
     struct stream out_s;
     char data[32];
@@ -766,7 +948,7 @@ pcscd_transmit_reply(struct pcscd_context* context, int card,
 int
 pcscd_control_reply(struct pcscd_context* context, int card, int controlcode,
                     int sendbytes, int recvbytes, int bytesreturned,
-                    int result, const char* recvdata)
+                    int result, const void* recvdata)
 {
     struct stream out_s;
     char data[24];
@@ -822,7 +1004,7 @@ pcscd_cancel_reply(struct pcscd_context* context, int hcontext, int result)
 /*****************************************************************************/
 int
 pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
-                       const char* attr, int attrlen, int result)
+                       const void* attr, int attrlen, int result)
 {
     struct stream out_s;
     char data[280];
@@ -832,11 +1014,12 @@ pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
     out_s.p = out_s.data;
     out_uint32(&out_s, card);
     out_uint32(&out_s, attrid);
-    out_uint8a(&out_s, attr, attrlen);
-    if (attrlen < 264)
+    if ((attrlen < 0) || (attrlen > 264))
     {
-        out_uint8s(&out_s, 264 - attrlen);
+        return LIBPCSCD_ERROR_PARAM;
     }
+    out_uint8a(&out_s, attr, attrlen);
+    out_uint8s(&out_s, 264 - attrlen);
     out_uint32(&out_s, attrlen);
     out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 280);
@@ -845,7 +1028,7 @@ pcscd_get_attrib_reply(struct pcscd_context* context, int card, int attrid,
 /*****************************************************************************/
 int
 pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
-                       const char* attr, int attrlen, int result)
+                       const void* attr, int attrlen, int result)
 {
     struct stream out_s;
     char data[280];
@@ -855,11 +1038,12 @@ pcscd_set_attrib_reply(struct pcscd_context* context, int card, int attrid,
     out_s.p = out_s.data;
     out_uint32(&out_s, card);
     out_uint32(&out_s, attrid);
-    out_uint8a(&out_s, attr, attrlen);
-    if (attrlen < 264)
+    if ((attrlen < 0) || (attrlen > 264))
     {
-        out_uint8s(&out_s, 264 - attrlen);
+        return LIBPCSCD_ERROR_PARAM;
     }
+    out_uint8a(&out_s, attr, attrlen);
+    out_uint8s(&out_s, 264 - attrlen);
     out_uint32(&out_s, attrlen);
     out_uint32(&out_s, result);
     return context->send_to_app(context, out_s.data, 280);
