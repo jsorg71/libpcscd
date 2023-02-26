@@ -169,6 +169,7 @@ struct call_test_info
     {
         volatile int callcount;
         struct pcsc_reader_state states[16];
+        int num_states;
     } cmd_get_readers_state_test;
     struct cmd_wait_reader_state_change_test_info
     {
@@ -590,14 +591,16 @@ my_cmd_get_readers_state(struct pcscd_context* context)
 {
     struct pcsc_reader_state states[16];
     struct call_test_info* cti;
+    int num_states;
 
     //printf("my_cmd_get_readers_state:\n");
     cti = (struct call_test_info*)(context->user[0]);
     pthread_mutex_lock(&(cti->mutex));
     cti->cmd_get_readers_state_test.callcount++;
     memcpy(states, cti->cmd_get_readers_state_test.states, sizeof(states));
+    num_states = cti->cmd_get_readers_state_test.num_states;
     pthread_mutex_unlock(&(cti->mutex));
-    return pcscd_cmd_get_readers_state_reply(context, states, 16);
+    return pcscd_cmd_get_readers_state_reply(context, states, num_states);
 }
 
 /*****************************************************************************/
@@ -813,6 +816,7 @@ pcsc_thread_loop(void* in)
     strncpy(cti->cmd_get_readers_state_test.states[1].readerName, "jay2", 127);
     cti->cmd_get_readers_state_test.states[1].eventCounter = 1;
     cti->cmd_get_readers_state_test.states[1].readerState = SCARD_ABSENT;
+    cti->cmd_get_readers_state_test.num_states = 2;
     pthread_mutex_unlock(&(cti->mutex));
     bytes = 256;
     rv = SCardListReaders(hcontext, NULL, readers, &bytes);
