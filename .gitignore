@@ -1,0 +1,4 @@
+*.a
+*.o
+*.so
+test/call_test
