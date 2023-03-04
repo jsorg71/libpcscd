@@ -417,7 +417,7 @@ my_transmit(struct pcscd_context* context, int card,
             int recvbytes, int result, const void* senddata)
 {
     struct call_test_info* cti;
-    char* recvdata;
+    void* recvdata;
 
     //printf("my_transmit: card %d result %d send_bytes %d recv_bytes %d\n",
     //       card, result, sendbytes, recvbytes);
@@ -452,7 +452,7 @@ my_control(struct pcscd_context* context, int card, int controlcode,
            int result, const void* senddata)
 {
     struct call_test_info* cti;
-    char* recvdata;
+    void* recvdata;
 
     //printf("my_control: card %d result %d\n", card, result);
     cti = (struct call_test_info*)(context->user[0]);

@@ -27,6 +27,7 @@ struct pcscd_context_priv
 {
     struct pcscd_context context;
     struct stream in_s;
+    struct stream out_s;
 };
 
 #define LOG_ERROR lctx, 0
