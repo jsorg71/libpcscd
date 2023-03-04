@@ -13,7 +13,7 @@ libpcscd.so: $(OBJS)
 	$(CC) -shared -o libpcscd.so $(OBJS) $(LDFLAGS) $(LIBS)
 
 libpcscd.a: $(OBJS)
-	$(AR) rvu libpcscd.a $(OBJS)
+	$(AR) -r libpcscd.a $(OBJS)
 	ranlib libpcscd.a
 
 clean:
