@@ -855,7 +855,7 @@ pcsc_thread_loop(void* in)
     callcount = cti->disconnect_test.callcount;
     cti->disconnect_test.out_result = SCARD_S_SUCCESS;
     pthread_mutex_unlock(&(cti->mutex));
-    rv = SCardDisconnect(hcontext, card);
+    rv = SCardDisconnect(card, SCARD_LEAVE_CARD);
     printf("pcsc_thread_loop: SCardDisconnect rv 0x%8.8x\n", (int)rv);
     pcsc_thread_wait(cti, callcount, &(cti->disconnect_test.callcount));
 
